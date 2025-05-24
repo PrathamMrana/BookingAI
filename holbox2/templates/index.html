@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Appointment Booking</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-gray-800">Appointment Booking</h1>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <div id="userSection" class="hidden">
+                        <span id="userEmail" class="mr-4 text-gray-600"></span>
+                        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Logout</button>
+                    </div>
+                    <div id="authSection">
+                        <button onclick="showLoginForm()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mr-2">Login</button>
+                        <button onclick="showRegisterForm()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Register</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Auth Forms -->
+        <div id="loginForm" class="hidden bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-4">Login</h2>
+            <form onsubmit="login(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Login</button>
+            </form>
+        </div>
+
+        <div id="registerForm" class="hidden bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-4">Register</h2>
+            <form onsubmit="register(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="fullName">Full Name</label>
+                    <input type="text" id="fullName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="phoneNumber">Phone Number</label>
+                    <input type="tel" id="phoneNumber" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Register</button>
+            </form>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="hidden">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold mb-4">Available Appointments</h2>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="appointmentDate">Date</label>
+                    <input type="date" id="appointmentDate" class="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="serviceType">Service Type</label>
+                    <select id="serviceType" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="">All Services</option>
+                        <option value="medical">Medical</option>
+                        <option value="dental">Dental</option>
+                        <option value="consultation">Consultation</option>
+                    </select>
+                </div>
+                <button onclick="searchAppointments()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Search</button>
+            </div>
+
+            <div id="appointmentResults" class="mt-6">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Auth functions
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+        }
+
+        function showRegisterForm() {
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+        }
+
+        async function login(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('userEmail', data.email);
+                    showMainContent();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Error logging in');
+            }
+        }
+
+        async function register(event) {
+            event.preventDefault();
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const fullName = document.getElementById('fullName').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
+
+            try {
+                const response = await fetch('/api/users/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, full_name: fullName, phone_number: phoneNumber })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Registration successful! Please login.');
+                    showLoginForm();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Error registering');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userEmail');
+            showLoginForm();
+        }
+
+        // Main content functions
+        function showMainContent() {
+            document.getElementById('mainContent').classList.remove('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('userSection').classList.remove('hidden');
+            document.getElementById('userEmail').textContent = localStorage.getItem('userEmail');
+        }
+
+        async function searchAppointments() {
+            const date = document.getElementById('appointmentDate').value;
+            const serviceType = document.getElementById('serviceType').value;
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`/api/availability?start_date=${date}&service_type=${serviceType}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    displayAppointments(data.available_slots);
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Error searching appointments');
+            }
+        }
+
+        function displayAppointments(slots) {
+            const resultsDiv = document.getElementById('appointmentResults');
+            resultsDiv.innerHTML = '';
+
+            if (slots.length === 0) {
+                resultsDiv.innerHTML = '<p class="text-gray-600">No available appointments found.</p>';
+                return;
+            }
+
+            slots.forEach(slot => {
+                const slotElement = document.createElement('div');
+                slotElement.className = 'bg-white p-4 rounded-lg shadow-md mb-4';
+                slotElement.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold">${slot.provider_name}</h3>
+                            <p class="text-gray-600">${slot.service_type}</p>
+                            <p class="text-gray-600">${new Date(slot.start_time).toLocaleString()} - ${new Date(slot.end_time).toLocaleTimeString()}</p>
+                        </div>
+                        <button onclick="bookAppointment(${slot.id})" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                            Book
+                        </button>
+                    </div>
+                `;
+                resultsDiv.appendChild(slotElement);
+            });
+        }
+
+        async function bookAppointment(slotId) {
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch('/api/appointments/book', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ slot_id: slotId })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Appointment booked successfully!');
+                    searchAppointments(); // Refresh the list
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Error booking appointment');
+            }
+        }
+
+        // Check if user is already logged in
+        if (localStorage.getItem('token')) {
+            showMainContent();
+        } else {
+            showLoginForm();
+        }
+    </script>
+</body>
+</html> 
