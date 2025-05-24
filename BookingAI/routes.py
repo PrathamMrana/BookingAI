@@ -237,6 +237,53 @@ def init_routes(app):
             'appointment_id': appointment.id
         }), 201
 
+    @app.route('/api/appointments/call', methods=['POST'])
+    @jwt_required()
+    def schedule_call_appointment():
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        service_type = data.get('service_type')
+        phone_number = data.get('phone_number')
+        preferred_time = data.get('preferred_time')
+
+        if not all([service_type, phone_number]):
+            return jsonify({'message': 'Missing required fields'}), 400
+
+        # Get the user's information
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        # Create a pending call appointment
+        call_appointment = Appointment(
+            user_id=user_id,
+            status='pending_call',
+            urgency_level=1
+        )
+
+        # Store the call request details
+        call_details = {
+            'service_type': service_type,
+            'phone_number': phone_number,
+            'preferred_time': preferred_time,
+            'user_name': user.full_name,
+            'user_email': user.email
+        }
+
+        # Here you would integrate with your phone system
+        # For now, we'll just store it in the database
+        db.session.add(call_appointment)
+        db.session.commit()
+
+        # Send confirmation email to user
+        confirmation_msg = f"We have received your request for a {service_type} appointment. Our team will call you at {phone_number} during your preferred time: {preferred_time}"
+        send_email(user.email, "Call Appointment Request Received", confirmation_msg)
+
+        return jsonify({
+            'message': 'Call appointment request received successfully',
+            'appointment_id': call_appointment.id
+        }), 201
+
     @app.route('/api/messages', methods=['GET'])
     @jwt_required()
     def get_messages():

@@ -81,12 +81,61 @@
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="serviceType">Service Type</label>
                     <select id="serviceType" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         <option value="">All Services</option>
-                        <option value="medical">Medical</option>
-                        <option value="dental">Dental</option>
+                        <optgroup label="Medical">
+                            <option value="medical_general">General Medical</option>
+                            <option value="medical_urgent">Urgent Care</option>
+                            <option value="medical_followup">Follow-up Visit</option>
+                        </optgroup>
+                        <optgroup label="Dental">
+                            <option value="dental_checkup">Regular Checkup</option>
+                            <option value="dental_cleaning">Teeth Cleaning</option>
+                            <option value="dental_emergency">Emergency Dental Care</option>
+                        </optgroup>
                         <option value="consultation">Consultation</option>
                     </select>
                 </div>
-                <button onclick="searchAppointments()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Search</button>
+                <div class="flex space-x-4">
+                    <button onclick="searchAppointments()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Search Online Slots</button>
+                    <button onclick="showCallRequestForm()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Request a Call</button>
+                </div>
+            </div>
+
+            <!-- Call Request Form -->
+            <div id="callRequestForm" class="hidden mt-6 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-bold mb-4">Request a Call for Appointment</h3>
+                <form onsubmit="submitCallRequest(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="callServiceType">Service Type</label>
+                        <select id="callServiceType" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                            <optgroup label="Medical">
+                                <option value="medical_general">General Medical</option>
+                                <option value="medical_urgent">Urgent Care</option>
+                                <option value="medical_followup">Follow-up Visit</option>
+                            </optgroup>
+                            <optgroup label="Dental">
+                                <option value="dental_checkup">Regular Checkup</option>
+                                <option value="dental_cleaning">Teeth Cleaning</option>
+                                <option value="dental_emergency">Emergency Dental Care</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="preferredTime">Preferred Call Time</label>
+                        <select id="preferredTime" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                            <option value="morning">Morning (9 AM - 12 PM)</option>
+                            <option value="afternoon">Afternoon (12 PM - 4 PM)</option>
+                            <option value="evening">Evening (4 PM - 7 PM)</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="callPhoneNumber">Phone Number</label>
+                        <input type="tel" id="callPhoneNumber" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    </div>
+                    <div class="flex justify-between">
+                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Submit Request</button>
+                        <button type="button" onclick="hideCallRequestForm()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Cancel</button>
+                    </div>
+                </form>
             </div>
 
             <div id="appointmentResults" class="mt-6">
@@ -249,6 +298,47 @@
                 }
             } catch (error) {
                 alert('Error booking appointment');
+            }
+        }
+
+        function showCallRequestForm() {
+            document.getElementById('callRequestForm').classList.remove('hidden');
+        }
+
+        function hideCallRequestForm() {
+            document.getElementById('callRequestForm').classList.add('hidden');
+        }
+
+        async function submitCallRequest(event) {
+            event.preventDefault();
+            const serviceType = document.getElementById('callServiceType').value;
+            const phoneNumber = document.getElementById('callPhoneNumber').value;
+            const preferredTime = document.getElementById('preferredTime').value;
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch('/api/appointments/call', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        service_type: serviceType,
+                        phone_number: phoneNumber,
+                        preferred_time: preferredTime
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Call request submitted successfully! Our team will call you at your preferred time.');
+                    hideCallRequestForm();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Error submitting call request');
             }
         }
 
