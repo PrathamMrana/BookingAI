@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Interaction POC</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #0056b3; }
+        .controls, .output { margin-bottom: 20px; }
+        button {
+            padding: 10px 15px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        .display-area {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            min-height: 50px;
+        }
+        p { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Voice Interaction</h1>
+
+        <div class="controls">
+            <button id="startButton">Start Listening</button>
+            <button id="stopButton" disabled>Stop Listening</button>
+        </div>
+
+        <div class="output">
+            <p><strong>You said:</strong></p>
+            <div id="sttDisplay" class="display-area">...</div>
+        </div>
+
+        <div class="output">
+            <p><strong>Backend says:</strong></p>
+            <div id="backendResponseDisplay" class="display-area">...</div>
+        </div>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const sttDisplay = document.getElementById('sttDisplay');
+        const backendResponseDisplay = document.getElementById('backendResponseDisplay');
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; // Process single utterances
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => {
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                sttDisplay.textContent = 'Listening...';
+                backendResponseDisplay.textContent = '...';
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                sttDisplay.textContent = transcript;
+                sendToBackend(transcript);
+            };
+
+            recognition.onerror = (event) => {
+                sttDisplay.textContent = 'Error in recognition: ' + event.error;
+                console.error('Speech recognition error:', event.error);
+                startButton.disabled = false;
+                stopButton.disabled = true;
+            };
+
+            recognition.onend = () => {
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                if (sttDisplay.textContent === 'Listening...') {
+                    sttDisplay.textContent = 'Did not hear anything. Try again.';
+                }
+            };
+
+            startButton.addEventListener('click', () => {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    sttDisplay.textContent = 'Could not start recognition: ' + e.message;
+                    console.error('Could not start recognition:', e);
+                    startButton.disabled = false;
+                }
+            });
+
+            stopButton.addEventListener('click', () => {
+                recognition.stop();
+                // onend will handle button states
+            });
+
+        } else {
+            startButton.disabled = true;
+            stopButton.disabled = true;
+            sttDisplay.textContent = 'Speech recognition not supported in this browser.';
+            alert('Speech recognition not supported in this browser. Please try Chrome or Edge.');
+        }
+
+        async function sendToBackend(text) {
+            backendResponseDisplay.textContent = 'Processing...';
+            try {
+                const response = await fetch('/api/voice/interact', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ transcribed_text: text }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
+                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const responseText = data.response_text;
+                backendResponseDisplay.textContent = responseText;
+                speakResponse(responseText);
+
+            } catch (error) {
+                console.error('Error sending to backend:', error);
+                backendResponseDisplay.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        function speakResponse(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.onerror = (event) => {
+                    console.error('SpeechSynthesisUtterance error:', event.error);
+                    backendResponseDisplay.textContent += ' (TTS Error)';
+                };
+                window.speechSynthesis.speak(utterance);
+            } else {
+                backendResponseDisplay.textContent += ' (Speech synthesis not supported)';
+                alert('Speech synthesis not supported in this browser.');
+            }
+        }
+    </script>
+</body>
+</html>
