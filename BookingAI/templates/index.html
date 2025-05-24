@@ -5,44 +5,204 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intelligent Appointment Booking</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Modern UI Styles */
+        .gradient-bg {
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .voice-input {
+            position: relative;
+        }
+        .voice-input i {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4F46E5;
+            cursor: pointer;
+        }
+        .voice-input.recording i {
+            color: #EF4444;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .service-card {
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .service-card img {
+            transition: transform 0.3s ease;
+        }
+        .service-card:hover img {
+            transform: scale(1.1);
+        }
+        .time-slot {
+            transition: all 0.2s ease;
+        }
+        .time-slot:hover {
+            background-color: #EEF2FF;
+        }
+        .time-slot.selected {
+            background-color: #4F46E5;
+            color: white;
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4F46E5;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 640px) {
+            .nav-container {
+                padding: 0.5rem;
+            }
+            .nav-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .nav-buttons button {
+                width: 100%;
+            }
+            .main-container {
+                padding: 1rem;
+            }
+            .service-grid {
+                grid-template-columns: 1fr;
+            }
+            .time-slots {
+                grid-template-columns: 1fr;
+            }
+            .form-container {
+                padding: 1rem;
+            }
+            .input-group {
+                margin-bottom: 1rem;
+            }
+            .button-group {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .button-group button {
+                width: 100%;
+            }
+            .message-container {
+                grid-template-columns: 1fr;
+            }
+            .message-list {
+                max-height: 200px;
+            }
+            .message-thread {
+                height: 300px;
+            }
+            .message-input {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .message-input input {
+                width: 100%;
+            }
+            .message-input button {
+                width: 100%;
+            }
+        }
+
+        /* Tablet Responsive Styles */
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .service-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .time-slots {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .message-container {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+
+        /* Safe Area Insets for Modern Mobile Browsers */
+        @supports (padding: max(0px)) {
+            .nav-container {
+                padding-left: max(1rem, env(safe-area-inset-left));
+                padding-right: max(1rem, env(safe-area-inset-right));
+            }
+            .main-container {
+                padding-left: max(1rem, env(safe-area-inset-left));
+                padding-right: max(1rem, env(safe-area-inset-right));
+                padding-bottom: max(1rem, env(safe-area-inset-bottom));
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <h1 class="text-xl font-bold text-gray-800">Appointment Booking</h1>
-                    </div>
+<body class="bg-gray-50">
+    <nav class="gradient-bg text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 nav-container">
+            <div class="flex flex-col sm:flex-row justify-between items-center py-4">
+                <div class="flex items-center mb-4 sm:mb-0">
+                    <i class="fas fa-calendar-check text-2xl mr-2"></i>
+                    <h1 class="text-xl font-bold">Appointment Booking</h1>
                 </div>
-                <div class="flex items-center">
-                    <div id="userSection" class="hidden">
-                        <span id="userEmail" class="mr-4 text-gray-600"></span>
-                        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Logout</button>
+                <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 nav-buttons">
+                    <div id="userSection" class="hidden w-full sm:w-auto">
+                        <span id="userEmail" class="block sm:inline mb-2 sm:mb-0 sm:mr-4 text-center"></span>
+                        <button onclick="logout()" class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-300">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
                     </div>
-                    <div id="authSection">
-                        <button onclick="showLoginForm()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mr-2">Login</button>
-                        <button onclick="showRegisterForm()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Register</button>
+                    <div id="authSection" class="w-full sm:w-auto">
+                        <button onclick="showLoginForm()" class="w-full sm:w-auto bg-white text-indigo-600 hover:bg-gray-100 px-4 py-2 rounded-lg transition duration-300 mb-2 sm:mb-0">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        </button>
+                        <button onclick="showRegisterForm()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition duration-300">
+                            <i class="fas fa-user-plus mr-2"></i>Register
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 main-container">
         <!-- Auth Forms -->
-        <div id="loginForm" class="hidden bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-2xl font-bold mb-4">Login</h2>
-            <form onsubmit="login(event)">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginEmail">Email</label>
-                    <input type="email" id="loginEmail" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+        <div id="loginForm" class="hidden bg-white p-8 rounded-xl shadow-lg max-w-md mx-auto">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">
+                <i class="fas fa-sign-in-alt text-indigo-600 mr-2"></i>Welcome Back
+            </h2>
+            <form onsubmit="login(event)" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginEmail">
+                        <i class="fas fa-envelope text-gray-500 mr-2"></i>Email
+                    </label>
+                    <input type="email" id="loginEmail" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginPassword">
+                        <i class="fas fa-lock text-gray-500 mr-2"></i>Password
+                    </label>
+                    <input type="password" id="loginPassword" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                 </div>
-                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Login</button>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login
+                </button>
             </form>
         </div>
 
@@ -71,80 +231,353 @@
 
         <!-- Main Content -->
         <div id="mainContent" class="hidden">
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-2xl font-bold mb-4">Available Appointments</h2>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="appointmentDate">Date</label>
-                    <input type="date" id="appointmentDate" class="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="serviceType">Service Type</label>
-                    <select id="serviceType" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        <option value="">All Services</option>
-                        <optgroup label="Medical">
-                            <option value="medical_general">General Medical</option>
-                            <option value="medical_urgent">Urgent Care</option>
-                            <option value="medical_followup">Follow-up Visit</option>
-                        </optgroup>
-                        <optgroup label="Dental">
-                            <option value="dental_checkup">Regular Checkup</option>
-                            <option value="dental_cleaning">Teeth Cleaning</option>
-                            <option value="dental_emergency">Emergency Dental Care</option>
-                        </optgroup>
-                        <option value="consultation">Consultation</option>
-                    </select>
-                </div>
-                <div class="flex space-x-4">
-                    <button onclick="searchAppointments()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Search Online Slots</button>
-                    <button onclick="showCallRequestForm()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Request a Call</button>
-                </div>
-            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 service-grid">
+                <!-- Service Selection -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800">
+                        <i class="fas fa-calendar-alt text-indigo-600 mr-2"></i>Book Your Appointment
+                    </h2>
+                    
+                    <!-- Service Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        <div class="service-card bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl cursor-pointer" onclick="selectService('medical')">
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-stethoscope text-indigo-600 text-2xl mr-2"></i>
+                                <h3 class="font-bold text-gray-800">Medical</h3>
+                            </div>
+                            <p class="text-sm text-gray-600">General checkups, urgent care, and follow-ups</p>
+                        </div>
+                        <div class="service-card bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl cursor-pointer" onclick="selectService('dental')">
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-tooth text-emerald-600 text-2xl mr-2"></i>
+                                <h3 class="font-bold text-gray-800">Dental</h3>
+                            </div>
+                            <p class="text-sm text-gray-600">Checkups, cleanings, and emergency care</p>
+                        </div>
+                    </div>
 
-            <!-- Call Request Form -->
-            <div id="callRequestForm" class="hidden mt-6 bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-xl font-bold mb-4">Request a Call for Appointment</h3>
-                <form onsubmit="submitCallRequest(event)">
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2" for="callServiceType">Service Type</label>
-                        <select id="callServiceType" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
-                            <optgroup label="Medical">
-                                <option value="medical_general">General Medical</option>
-                                <option value="medical_urgent">Urgent Care</option>
-                                <option value="medical_followup">Follow-up Visit</option>
-                            </optgroup>
-                            <optgroup label="Dental">
-                                <option value="dental_checkup">Regular Checkup</option>
-                                <option value="dental_cleaning">Teeth Cleaning</option>
-                                <option value="dental_emergency">Emergency Dental Care</option>
-                            </optgroup>
-                        </select>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="appointmentDate">
+                            <i class="fas fa-calendar text-gray-500 mr-2"></i>Preferred Date
+                        </label>
+                        <input type="date" id="appointmentDate" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2" for="preferredTime">Preferred Call Time</label>
-                        <select id="preferredTime" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
-                            <option value="morning">Morning (9 AM - 12 PM)</option>
-                            <option value="afternoon">Afternoon (12 PM - 4 PM)</option>
-                            <option value="evening">Evening (4 PM - 7 PM)</option>
-                        </select>
+
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                        <button onclick="searchAppointments()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                            <i class="fas fa-search mr-2"></i>Find Available Slots
+                        </button>
+                        <button onclick="showCallRequestForm()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                            <i class="fas fa-phone mr-2"></i>Request Call
+                        </button>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2" for="callPhoneNumber">Phone Number</label>
-                        <input type="tel" id="callPhoneNumber" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+
+                <!-- Replace the call request form with AI Call Interface -->
+                <div id="aiCallInterface" class="hidden bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold mb-6 text-gray-800">
+                        <i class="fas fa-robot text-indigo-600 mr-2"></i>AI Assistant Call
+                    </h3>
+                    
+                    <!-- Department Selection -->
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <i class="fas fa-hospital text-gray-500 mr-2"></i>Select Department
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="department-option p-4 border rounded-lg cursor-pointer hover:bg-gray-50" onclick="selectDepartment('medical')">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-stethoscope text-indigo-600 text-xl mr-2"></i>
+                                    <h4 class="font-bold">Medical Department</h4>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <p>• General Consultation</p>
+                                    <p>• Urgent Care</p>
+                                    <p>• Follow-up Visit</p>
+                                </div>
+                            </div>
+                            <div class="department-option p-4 border rounded-lg cursor-pointer hover:bg-gray-50" onclick="selectDepartment('dental')">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-tooth text-emerald-600 text-xl mr-2"></i>
+                                    <h4 class="font-bold">Dental Department</h4>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <p>• Regular Checkup</p>
+                                    <p>• Teeth Cleaning</p>
+                                    <p>• Emergency Care</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex justify-between">
-                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Submit Request</button>
-                        <button type="button" onclick="hideCallRequestForm()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Cancel</button>
+
+                    <!-- Phone Number Input -->
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <i class="fas fa-phone text-gray-500 mr-2"></i>Your Phone Number
+                        </label>
+                        <div class="voice-input">
+                            <input type="tel" id="callPhoneNumber" class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="+1 (555) 555-5555" required>
+                            <i class="fas fa-microphone" onclick="startVoiceInput('callPhoneNumber')"></i>
+                        </div>
                     </div>
-                </form>
+
+                    <!-- Start Call Button -->
+                    <button onclick="startAICall()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
+                        <i class="fas fa-phone mr-2"></i>Start Call with AI Assistant
+                    </button>
+
+                    <!-- Call Interface (Hidden by default) -->
+                    <div id="activeCallInterface" class="hidden mt-6">
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4 h-96 overflow-y-auto" id="callTranscript">
+                            <!-- Call transcript will be populated here -->
+                        </div>
+                        
+                        <div class="flex flex-col space-y-4">
+                            <div class="flex items-center justify-center space-x-4">
+                                <div id="voiceStatus" class="text-sm text-gray-600">
+                                    <i class="fas fa-circle text-red-500 animate-pulse mr-2"></i>
+                                    Call in progress...
+                                </div>
+                            </div>
+                            
+                            <button onclick="endAICall()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                                <i class="fas fa-phone-slash mr-2"></i>End Call
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="appointmentResults" class="mt-6">
                 <!-- Results will be populated here -->
             </div>
+
+            <!-- Add this after the call request form -->
+            <div id="messagingInterface" class="hidden bg-white p-4 sm:p-6 rounded-xl shadow-lg mt-6">
+                <h3 class="text-xl font-bold mb-6 text-gray-800">
+                    <i class="fas fa-comments text-indigo-600 mr-2"></i>Messages
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 message-container">
+                    <!-- Message List -->
+                    <div class="lg:col-span-1">
+                        <div class="space-y-4 max-h-[400px] overflow-y-auto message-list" id="messageList">
+                            <!-- Messages will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Message Content -->
+                    <div class="lg:col-span-2">
+                        <div id="messageContent" class="hidden">
+                            <div class="bg-gray-50 rounded-lg p-4 mb-4 h-[400px] overflow-y-auto message-thread" id="messageThread">
+                                <!-- Message thread will be populated here -->
+                            </div>
+                            <form onsubmit="sendMessage(event)" class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 message-input">
+                                <input type="text" id="messageInput" class="flex-1 shadow appearance-none border rounded-lg py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Type your message...">
+                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                                    <i class="fas fa-paper-plane mr-2"></i>Send
+                                </button>
+                            </form>
+                        </div>
+                        <div id="noMessageSelected" class="text-center text-gray-500 py-8">
+                            <i class="fas fa-comments text-4xl mb-2"></i>
+                            <p>Select a message to start chatting</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
     <script>
+        // Voice Input Functionality
+        let recognition;
+        let synthesis;
+        let isListening = false;
+        let currentCallId = null;
+        let isAgentSpeaking = false;
+
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = function() {
+                    isListening = true;
+                    document.getElementById('voiceStatus').classList.remove('hidden');
+                };
+
+                recognition.onend = function() {
+                    isListening = false;
+                    if (currentCallId && !isAgentSpeaking) {
+                        setTimeout(() => {
+                            recognition.start();
+                        }, 1000);
+                    }
+                };
+
+                recognition.onresult = function(event) {
+                    const userMessage = event.results[event.results.length - 1][0].transcript;
+                    addMessageToTranscript('user', userMessage);
+                    processVoiceMessage(userMessage);
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    isListening = false;
+                    if (currentCallId && !isAgentSpeaking) {
+                        setTimeout(() => {
+                            recognition.start();
+                        }, 1000);
+                    }
+                };
+            }
+
+            if ('speechSynthesis' in window) {
+                synthesis = window.speechSynthesis;
+                
+                synthesis.onstart = function() {
+                    isAgentSpeaking = true;
+                    if (isListening) {
+                        recognition.stop();
+                    }
+                };
+                
+                synthesis.onend = function() {
+                    isAgentSpeaking = false;
+                    if (currentCallId) {
+                        setTimeout(() => {
+                            recognition.start();
+                        }, 1000);
+                    }
+                };
+            }
+        }
+
+        function startVoiceInput(inputId) {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+
+            if (!isRecording) {
+                recognition.start();
+                isRecording = true;
+                document.querySelector('.voice-input i').classList.add('recording');
+            } else {
+                recognition.stop();
+                isRecording = false;
+                document.querySelector('.voice-input i').classList.remove('recording');
+            }
+        }
+
+        function startVoiceInteraction() {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+
+            if (!isListening && !isAgentSpeaking) {
+                recognition.start();
+            }
+        }
+
+        function speakResponse(text) {
+            if (synthesis) {
+                synthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                
+                setTimeout(() => {
+                    synthesis.speak(utterance);
+                }, 500);
+            }
+        }
+
+        async function processVoiceMessage(message) {
+            if (!currentCallId) return;
+
+            try {
+                const response = await fetch(`/api/call/${currentCallId}/interact`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    addMessageToTranscript('assistant', data.message);
+                    speakResponse(data.message);
+                    
+                    if (data.appointment_scheduled) {
+                        const confirmationMessage = `
+                            I've found an available slot for ${data.appointment_details.date} at ${data.appointment_details.time}. 
+                            Would you like me to confirm this appointment for you?
+                        `;
+                        addMessageToTranscript('system', confirmationMessage);
+                        speakResponse(confirmationMessage);
+                    }
+                    
+                    if (data.alternative_slots) {
+                        const alternativesMessage = `
+                            I can offer you these alternative times:
+                            ${data.alternative_slots.join('\n')}
+                            Would you like to schedule for any of these times instead?
+                        `;
+                        addMessageToTranscript('system', alternativesMessage);
+                        speakResponse(alternativesMessage);
+                    }
+                    
+                    if (data.appointment_confirmed) {
+                        const confirmationMessage = `
+                            Great! I've confirmed your appointment. You'll receive a confirmation email shortly. 
+                            Is there anything else you need help with?
+                        `;
+                        addMessageToTranscript('system', confirmationMessage);
+                        speakResponse(confirmationMessage);
+                    }
+                } else {
+                    const errorMessage = data.message || 'I apologize, but I encountered an error processing your request. Could you please try again?';
+                    addMessageToTranscript('system', errorMessage);
+                    speakResponse(errorMessage);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const errorMessage = 'I apologize, but I encountered an error. Could you please try again?';
+                addMessageToTranscript('system', errorMessage);
+                speakResponse(errorMessage);
+            }
+        }
+
+        function addMessageToTranscript(role, message) {
+            const transcript = document.getElementById('callTranscript');
+            const messageElement = document.createElement('div');
+            messageElement.className = `mb-4 ${role === 'user' ? 'text-right' : 'text-left'}`;
+            
+            const formattedMessage = message.replace(/\n/g, '<br>');
+            
+            messageElement.innerHTML = `
+                <div class="inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    role === 'user' 
+                        ? 'bg-indigo-600 text-white' 
+                        : role === 'system'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-200 text-gray-800'
+                }">
+                    <p>${formattedMessage}</p>
+                    <span class="text-xs ${role === 'user' ? 'text-indigo-200' : 'text-gray-500'}">
+                        ${new Date().toLocaleTimeString()}
+                    </span>
+                </div>
+            `;
+            transcript.appendChild(messageElement);
+            transcript.scrollTop = transcript.scrollHeight;
+        }
+
         // Auth functions
         function showLoginForm() {
             document.getElementById('loginForm').classList.remove('hidden');
@@ -223,6 +656,8 @@
             document.getElementById('authSection').classList.add('hidden');
             document.getElementById('userSection').classList.remove('hidden');
             document.getElementById('userEmail').textContent = localStorage.getItem('userEmail');
+            document.getElementById('aiCallInterface').classList.remove('hidden');
+            loadMessages();
         }
 
         async function searchAppointments() {
@@ -302,44 +737,208 @@
         }
 
         function showCallRequestForm() {
-            document.getElementById('callRequestForm').classList.remove('hidden');
+            document.getElementById('aiCallInterface').classList.remove('hidden');
         }
 
         function hideCallRequestForm() {
-            document.getElementById('callRequestForm').classList.add('hidden');
+            document.getElementById('aiCallInterface').classList.add('hidden');
         }
 
-        async function submitCallRequest(event) {
-            event.preventDefault();
-            const serviceType = document.getElementById('callServiceType').value;
+        let selectedDepartment = null;
+
+        function selectDepartment(department) {
+            selectedDepartment = department;
+            document.querySelectorAll('.department-option').forEach(option => {
+                option.classList.remove('border-indigo-500', 'bg-indigo-50');
+                if (option.querySelector('h4').textContent.toLowerCase().includes(department)) {
+                    option.classList.add('border-indigo-500', 'bg-indigo-50');
+                }
+            });
+        }
+
+        async function startAICall() {
+            if (!selectedDepartment) {
+                alert('Please select a department first');
+                return;
+            }
+            
             const phoneNumber = document.getElementById('callPhoneNumber').value;
-            const preferredTime = document.getElementById('preferredTime').value;
-            const token = localStorage.getItem('token');
+            if (!phoneNumber) {
+                alert('Please enter your phone number');
+                return;
+            }
 
             try {
-                const response = await fetch('/api/appointments/call', {
+                const response = await fetch('/api/call/start', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        service_type: serviceType,
                         phone_number: phoneNumber,
-                        preferred_time: preferredTime
+                        department: selectedDepartment
                     })
                 });
 
                 const data = await response.json();
                 if (response.ok) {
-                    alert('Call request submitted successfully! Our team will call you at your preferred time.');
-                    hideCallRequestForm();
+                    currentCallId = data.call_id;
+                    document.getElementById('activeCallInterface').classList.remove('hidden');
+                    addMessageToTranscript('assistant', data.message);
+                    speakResponse(data.message);
+                    
+                    setTimeout(() => {
+                        startVoiceInteraction();
+                    }, 2000);
                 } else {
-                    alert(data.message);
+                    alert(data.message || 'Error starting call');
                 }
             } catch (error) {
-                alert('Error submitting call request');
+                console.error('Error:', error);
+                alert('Error starting call');
             }
+        }
+
+        async function endAICall() {
+            if (!currentCallId) return;
+
+            if (isListening) {
+                recognition.stop();
+            }
+            if (synthesis && synthesis.speaking) {
+                synthesis.cancel();
+            }
+
+            try {
+                const response = await fetch(`/api/call/${currentCallId}/end`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    currentCallId = null;
+                    document.getElementById('activeCallInterface').classList.add('hidden');
+                    document.getElementById('callTranscript').innerHTML = '';
+                    document.getElementById('voiceStatus').classList.add('hidden');
+                    alert('Call ended successfully');
+                } else {
+                    alert('Error ending call');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error ending call');
+            }
+        }
+
+        // Message handling functions
+        let currentChatId = null;
+
+        function loadMessages() {
+            const token = localStorage.getItem('token');
+            fetch('/api/messages', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const messageList = document.getElementById('messageList');
+                messageList.innerHTML = '';
+                
+                data.messages.forEach(message => {
+                    const messageElement = document.createElement('div');
+                    messageElement.className = `p-4 rounded-lg cursor-pointer hover:bg-gray-50 ${message.is_read ? 'bg-white' : 'bg-indigo-50'}`;
+                    messageElement.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-bold">${message.sender_id === getCurrentUserId() ? message.receiver_name : message.sender_name}</h4>
+                                <p class="text-sm text-gray-600">${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : ''}</p>
+                            </div>
+                            <span class="text-xs text-gray-500">${new Date(message.created_at).toLocaleTimeString()}</span>
+                        </div>
+                    `;
+                    messageElement.onclick = () => openChat(message);
+                    messageList.appendChild(messageElement);
+                });
+            })
+            .catch(error => console.error('Error loading messages:', error));
+        }
+
+        function openChat(message) {
+            currentChatId = message.sender_id === getCurrentUserId() ? message.receiver_id : message.sender_id;
+            document.getElementById('messageContent').classList.remove('hidden');
+            document.getElementById('noMessageSelected').classList.add('hidden');
+            loadMessageThread();
+        }
+
+        function loadMessageThread() {
+            const token = localStorage.getItem('token');
+            fetch('/api/messages', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const messageThread = document.getElementById('messageThread');
+                messageThread.innerHTML = '';
+                
+                const threadMessages = data.messages.filter(msg => 
+                    (msg.sender_id === currentChatId && msg.receiver_id === getCurrentUserId()) ||
+                    (msg.sender_id === getCurrentUserId() && msg.receiver_id === currentChatId)
+                );
+                
+                threadMessages.forEach(message => {
+                    const messageElement = document.createElement('div');
+                    messageElement.className = `mb-4 ${message.sender_id === getCurrentUserId() ? 'text-right' : 'text-left'}`;
+                    messageElement.innerHTML = `
+                        <div class="inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            message.sender_id === getCurrentUserId() 
+                                ? 'bg-indigo-600 text-white' 
+                                : 'bg-gray-200 text-gray-800'
+                        }">
+                            <p>${message.content}</p>
+                            <span class="text-xs ${message.sender_id === getCurrentUserId() ? 'text-indigo-200' : 'text-gray-500'}">
+                                ${new Date(message.created_at).toLocaleTimeString()}
+                            </span>
+                        </div>
+                    `;
+                    messageThread.appendChild(messageElement);
+                });
+                
+                messageThread.scrollTop = messageThread.scrollHeight;
+            })
+            .catch(error => console.error('Error loading message thread:', error));
+        }
+
+        function sendMessage(event) {
+            event.preventDefault();
+            const content = document.getElementById('messageInput').value;
+            if (!content || !currentChatId) return;
+
+            const token = localStorage.getItem('token');
+            fetch('/api/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    receiver_id: currentChatId,
+                    content: content
+                })
+            })
+            .then(response => response.json())
+            .then(() => {
+                document.getElementById('messageInput').value = '';
+                loadMessageThread();
+                loadMessages();
+            })
+            .catch(error => console.error('Error sending message:', error));
+        }
+
+        function getCurrentUserId() {
+            // This should be implemented to get the current user's ID from your auth system
+            return localStorage.getItem('userId');
         }
 
         // Check if user is already logged in
@@ -348,6 +947,9 @@
         } else {
             showLoginForm();
         }
+
+        // Initialize speech recognition when the page loads
+        document.addEventListener('DOMContentLoaded', initSpeechRecognition);
     </script>
 </body>
 </html> 

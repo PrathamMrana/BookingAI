@@ -5,15 +5,17 @@ class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String, unique=True, nullable=False)
-    password_hash = db.Column(db.String, nullable=False)
-    full_name = db.Column(db.String)
-    phone_number = db.Column(db.String, nullable=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+    phone_number = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_provider = db.Column(db.Boolean, default=False)
 
     service_provider = db.relationship("ServiceProvider", uselist=False, back_populates="user")
     appointments = db.relationship("Appointment", back_populates="user", cascade="all, delete-orphan")
+    call_requests = db.relationship("CallRequest", backref="user", lazy=True)
     sent_messages = db.relationship("Message", foreign_keys="[Message.sender_user_id]", back_populates="sender", cascade="all, delete-orphan")
     received_messages = db.relationship("Message", foreign_keys="[Message.recipient_user_id]", back_populates="recipient", cascade="all, delete-orphan")
     feedback_given = db.relationship("Feedback", back_populates="user", cascade="all, delete-orphan")
@@ -26,7 +28,7 @@ class ServiceProvider(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    service_type = db.Column(db.String)
+    service_type = db.Column(db.String(50), nullable=False)
     bio = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -34,6 +36,7 @@ class ServiceProvider(db.Model):
     user = db.relationship("User", back_populates="service_provider")
     availabilities = db.relationship("Availability", back_populates="provider", cascade="all, delete-orphan")
     appointments = db.relationship("Appointment", back_populates="provider", cascade="all, delete-orphan")
+    call_requests = db.relationship("CallRequest", backref="agent", lazy=True)
 
     def __repr__(self):
         return f"<ServiceProvider(id={self.id}, user_id={self.user_id}, service_type='{self.service_type}')>"
@@ -78,6 +81,26 @@ class Appointment(db.Model):
     def __repr__(self):
         return f"<Appointment(id={self.id}, user_id={self.user_id}, provider_id={self.provider_id}, slot_id={self.availability_id}, status='{self.status}', urgency={self.urgency_level})>"
 
+class CallRequest(db.Model):
+    __tablename__ = 'call_requests'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    agent_id = db.Column(db.Integer, db.ForeignKey('service_providers.id'))
+    service_type = db.Column(db.String(50), nullable=False)
+    phone_number = db.Column(db.String(20), nullable=False)
+    preferred_time = db.Column(db.String(20), nullable=False)
+    preferred_date = db.Column(db.DateTime, nullable=False)
+    notes = db.Column(db.Text)
+    status = db.Column(db.String(20), default='pending')
+    completed_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    messages = db.relationship("Message", backref="call_request", lazy=True)
+
+    def __repr__(self):
+        return f"<CallRequest(id={self.id}, user_id={self.user_id}, agent_id={self.agent_id}, service_type='{self.service_type}')>"
+
 class Message(db.Model):
     __tablename__ = 'messages'
 
@@ -107,6 +130,7 @@ class Feedback(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=True)
+    call_request_id = db.Column(db.Integer, db.ForeignKey('call_requests.id'))
     
     rating = db.Column(db.Integer, nullable=True)
     comment = db.Column(db.Text, nullable=True)
